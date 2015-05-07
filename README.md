@@ -6,16 +6,15 @@ Sessions are implemented as child entity of Conference since they are always
 part of a specific conference.  The session model uses one combined DateTime
 field but the SessionForm allows for input and display of data and time separately.
 I chose to use an Enum type for the type of session, similar to T-Shirt size, since
-the types should be limited to a set of pre-defined choices.  A Session can be created
-with only a ConferenceKey and a name, other fields will be defaulted to "To be announced"
-or another apporiate default.
+the types should be limited to a set of pre-defined choices, TBA being the default.
+A Session can be created with only a ConferenceKey and a name, other fields will be 
+defaulted to "To be announced" or another apporiate default.
 
 I ran into and had to work around this [NDB issue][7]
 
 I chose to create a separate Speaker entity that is not tied to Profile
 because speakers might not be users or attendees nor should they have to be.
-The Speaker entity must have a DisplayName. A speaker may be an attendee, 
-in which case the ProfileKey can be added.
+A speaker may be an attendee, in which case the ProfileKey can be added.
 
 I also had to implement a means of creating Speaker entities since they were
 needed for testing and App engine does not allow entity creation at the console.

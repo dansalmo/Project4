@@ -662,6 +662,19 @@ class ConferenceApi(remote.Service):
         s = Session(**data)
         s.put()
 
+        # add this session key to Speaker entity if a speakerKey was provided
+        if data['speakerKey']:
+            speaker = self._ndbKey(urlsafe=request.speakerKey).get()
+            # check if speaker is already speaking in this session
+            if data['speakerKey'] in speaker.sessionKeysSpeakingAt:
+                raise ConflictException(
+                    "%s is already speaking at this session" % speaker.displayName)
+
+            speaker = self._ndbKey(urlsafe=request.speakerKey).get()
+            speaker.sessionKeysSpeakingAt.append(s_key.urlsafe())
+            speaker.put()
+
+
         return self._copySessionToForm(s)
 
     #createSession(SessionForm, websafeConferenceKey) -- open only to the organizer of the conference
