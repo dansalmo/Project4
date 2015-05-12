@@ -16,12 +16,23 @@ I chose to create a separate Speaker entity that is not tied to Profile
 because speakers might not be users or attendees nor should they have to be.
 A speaker may be an attendee, in which case the ProfileKey can be added.
 
-I also had to implement a means of creating Speaker entities since they were
-needed for testing and App engine does not allow entity creation at the console.
+I also had to implement a means of creating  and getting Speaker entities since
+they were needed for testing and App engine does not allow entity creation at the
+console.
 
 ## Task 3 - Description of additional queries
 
+Purpose of 2 new queries:  Since my code allows for incomplete information in the
+creation of a conferenece or session, I added queries to find all incomplete conferences
+or sessions of a conference so that the queries could be used to easily find items that
+need to be completed.  I also added a 3rd query that gets all speakers. 
+
 ## Task 3 - Description of problem and solution proposal for provided query
+The problem for implementing the query for those that don't like workshops and don't like
+sessions after 7 pm was the need for more than one inequality.  The error was:
+`BadRequestError: Only one inequality filter per query is supported. Encountered both typeOfSession and startDateTime`
+I worked around this by doing the query without the time constraint, then iterating
+over the query results to remove times > 7pm.
 
 
 
