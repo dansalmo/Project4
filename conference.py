@@ -604,7 +604,7 @@ class ConferenceApi(remote.Service):
             raise endpoints.NotFoundException(
                 'Not a key of the %s Kind: %s' % (kind, websafeKey))
 
-    def _copySessionToForm(self, session):
+    def _copySessionToForm(self, session, name=None):
         """Copy relevant fields from Session to SessionForm."""
         sf = SessionForm()
         for field in sf.all_fields():
@@ -917,7 +917,7 @@ class ConferenceApi(remote.Service):
 # - - - Task 4: Featured Speaker get handler - - - - - - - - - - - - - - - - - - - -
 
     @endpoints.method(message_types.VoidMessage, StringMessage,
-            path='conference/featuredSpeaker',
+            path='featuredSpeaker',
             http_method='GET', name='getFeaturedSpeaker')
     def getFeaturedSpeaker(self, request):
         """Return Announcement from memcache."""
