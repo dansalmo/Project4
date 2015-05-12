@@ -2,6 +2,7 @@ App Engine application for the Udacity training course.
 
 ##Improvements since previous submission:
 
+1. Completed all tasks for project
 1. Removed debug print statements
 1. Fixed some typos
 1. Added code to also return the session key in SessionForm
