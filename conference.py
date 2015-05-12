@@ -801,10 +801,11 @@ class ConferenceApi(remote.Service):
 
         # get session;
         wssk = request.websafeSessionKey
-        session = ndb.Key(urlsafe=wssk).get()
+        s_key = ndb.Key(urlsafe=wssk)
+        session = s_key.get()
 
         # check that session is a Session key and it exists
-        self._checkKey(conf, wssk, 'Session')
+        self._checkKey(s_key, wssk, 'Session')
 
         # check if user already added session otherwise add
         if wssk in prof.sessionKeysWishList:
