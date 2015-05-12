@@ -1,5 +1,17 @@
 App Engine application for the Udacity training course.
 
+##Improvements since previous submission:
+
+1. Removed debug print statements
+1. Fixed some typos
+1. Added code to also return the session key in SessionForm
+1. Removed sessionKeysSpeakingAt property from Speaker
+1. Improved REST path naming according to [REST API TUTORIAL][8]
+1. Added checks for existence of key kinds used
+1. Fixed gross inefficiency in getSessionsBySpeaker
+1. Added speakersKey to SpeakerForm
+1. Added method for getting all Speakers
+
 ## Task 1 - Description of Sessions and Speakers implementation
 
 Sessions are implemented as child entity of Conference since they are always
@@ -69,3 +81,4 @@ over the query results to remove times > 7pm.
 [5]: https://localhost:8080/
 [6]: https://developers.google.com/appengine/docs/python/endpoints/endpoints_tool
 [7]: https://code.google.com/p/appengine-ndb-experiment/issues/detail?id=143
+[8]: http://www.restapitutorial.com/lessons/restfulresourcenaming.html
