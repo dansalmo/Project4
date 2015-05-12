@@ -30,6 +30,7 @@ need to be completed.  I also added a 3rd query that gets all speakers.
 ## Task 3 - Description of problem and solution proposal for provided query
 The problem for implementing the query for those that don't like workshops and don't like
 sessions after 7 pm was the need for more than one inequality.  The error was:
+
 `BadRequestError: Only one inequality filter per query is supported. Encountered both typeOfSession and startDateTime`
 I worked around this by doing the query without the time constraint, then iterating
 over the query results to remove times > 7pm.
