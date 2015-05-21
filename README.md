@@ -44,9 +44,8 @@ over the query results to remove times > 7pm.
 
 ### Task 4 - Featured Speaker email task
 
-Added a task and SendFeaturedSpeakerEmailHandler() to send a Featured Speaker email 
-when a speaker has more than two sessions.  The email names the speaker in the subject
-line and lists all of the session names for the speaker.
+Added a task to check if a speaker is speaking in more than one conference and if so,
+add a featured speaker entry to the memcache.
 
 ## Products
 - [App Engine][1]
