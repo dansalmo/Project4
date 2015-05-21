@@ -33,7 +33,7 @@ handlers:       # static then dynamic
 - url: /tasks/send_confirmation_email
   script: main.app
 
-- url: /tasks/send_featuredSpeaker_email
+- url: /tasks/check_featuredSpeaker
   script: main.app
 
 - url: /crons/set_announcement

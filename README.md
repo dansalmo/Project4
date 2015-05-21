@@ -2,7 +2,9 @@ App Engine application for the Udacity training course.
 
 ###Improvements since previous submission:
 
-1. Added task for Task4 to email featured speaker announcement
+1. Now using taskqueue to check for Featured Speaker
+1. Added @ndb.transactional(xg=True) decorator to _sessionAddIt to avaoid possible race condition
+1. Fixed 'confrence' typo 
 
 ### Task 1 - Description of Sessions and Speakers implementation
 

@@ -17,12 +17,16 @@ from google.appengine.api import app_identity
 from google.appengine.api import mail
 from conference import ConferenceApi
 
+from google.appengine.api import memcache
+from models import Session
+
+MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKER"
+
 class SetAnnouncementHandler(webapp2.RequestHandler):
     def get(self):
         """Set Announcement in Memcache."""
         ConferenceApi._cacheAnnouncement()
         self.response.set_status(204)
-
 
 class SendConfirmationEmailHandler(webapp2.RequestHandler):
     def post(self):
@@ -37,22 +41,17 @@ class SendConfirmationEmailHandler(webapp2.RequestHandler):
                 'conferenceInfo')
         )
 
-class SendFeaturedSpeakerEmailHandler(webapp2.RequestHandler):
+class CheckFeaturedSpeakerHandler(webapp2.RequestHandler):
     def post(self):
-        """Send email about Featured Speaker."""
-        print self.request.get('sessionNames')
-        mail.send_mail(
-            'noreply@%s.appspotmail.com' % (
-                app_identity.get_application_id()),     # from
-            self.request.get('email'),                  # to
-            'Come see our Featured Speaker: %s' % self.request.get('featuredSpeaker'),            # subj
-            # body
-            '%s will be speaking in the following sessions:\n'
-            '\r\n\r\n%s' % (self.request.get('featuredSpeaker'), self.request.get('sessionNames'))
-        )
+        """set memcache entry if speaker has more than one session"""
+        sessions = Session.query().filter(Session.speakerKey==self.request.get('speakerKey'))
+        if sessions.count() >= 2:
+            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, 
+                '%s is our latest Featured Speaker' % self.request.get(
+                'speakerDisplayName'))
 
 app = webapp2.WSGIApplication([
     ('/crons/set_announcement', SetAnnouncementHandler),
     ('/tasks/send_confirmation_email', SendConfirmationEmailHandler),
-    ('/tasks/send_featuredSpeaker_email', SendFeaturedSpeakerEmailHandler),
+    ('/tasks/check_featuredSpeaker', CheckFeaturedSpeakerHandler),
 ], debug=True)

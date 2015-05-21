@@ -48,7 +48,6 @@ from utils import getUserId
 
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
 API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
-MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKER"
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
 ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
@@ -542,7 +541,6 @@ class ConferenceApi(remote.Service):
          for conf in conferences]
         )
 
-
     @endpoints.method(CONF_GET_REQUEST, BooleanMessage,
             path='conference/{websafeConferenceKey}',
             http_method='POST', name='registerForConference')
@@ -683,19 +681,15 @@ class ConferenceApi(remote.Service):
             data['speakerDisplayName'] = speaker.displayName
 
 # - - - Task 4: Add a Task - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            #Check the speaker. If there is more than one session by this speaker at this conference, also add a new Memcache entry that features the speaker and session names. You can choose the Memcache key.
-            sessions = Session.query().filter(Session.speakerKey==data['speakerKey'])
-            if sessions.count() >= 2:
-                memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, '%s is our latest Featured Speaker' % data['speakerDisplayName'])
-                sessionNames = '\n'.join(s.name for s in sessions)
-                taskqueue.add(
-                    params={
-                        'email': user.email(),
-                        'sessionNames': sessionNames,
-                        'featuredSpeaker': data['speakerDisplayName']
-                        },
-                    url='/tasks/send_featuredSpeaker_email'
-                    )
+        # Check the speaker. If there is more than one session by this speaker at this conference,
+        # also add a new Memcache entry that features the speaker and session names.
+            taskqueue.add(
+                params={
+                    'speakerKey': data['speakerKey'],
+                    'speakerDisplayName': data['speakerDisplayName']
+                    },
+                url='/tasks/check_featuredSpeaker'
+                )
 # - - - End Task 4 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         # create Session
@@ -804,6 +798,7 @@ class ConferenceApi(remote.Service):
 # - - - Task 2: Add Sessions to User Wishlist - - - - - - - - - - - - - - - - - - - -
 
     #addSessionToWishlist(SessionKey) -- adds the session to the user's list of sessions they are interested in attending
+    @ndb.transactional(xg=True)
     def _sessionAddIt(self, request):
         """Add a session to the user Profile session wish list."""
         prof = self._getProfileFromUser() # get user Profile
