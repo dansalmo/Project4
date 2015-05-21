@@ -706,7 +706,7 @@ class ConferenceApi(remote.Service):
 
     #createSession(SessionForm, websafeConferenceKey) -- open only to the organizer of the conference
     @endpoints.method(SESSION_POST_REQUEST, SessionForm,
-            path='confrence/{websafeConferenceKey}/session',
+            path='conference/{websafeConferenceKey}/session',
             http_method='POST', name='createSession')
     def createSession(self, request):
         """Create a new session for a conference. Open only to the organizer of the conference"""
