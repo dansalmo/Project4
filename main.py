@@ -37,8 +37,22 @@ class SendConfirmationEmailHandler(webapp2.RequestHandler):
                 'conferenceInfo')
         )
 
+class SendFeaturedSpeakerEmailHandler(webapp2.RequestHandler):
+    def post(self):
+        """Send email about Featured Speaker."""
+        print self.request.get('sessionNames')
+        mail.send_mail(
+            'noreply@%s.appspotmail.com' % (
+                app_identity.get_application_id()),     # from
+            self.request.get('email'),                  # to
+            'Come see our Featured Speaker: %s' % self.request.get('featuredSpeaker'),            # subj
+            # body
+            '%s will be speaking in the following sessions:\n'
+            '\r\n\r\n%s' % (self.request.get('featuredSpeaker'), self.request.get('sessionNames'))
+        )
 
 app = webapp2.WSGIApplication([
     ('/crons/set_announcement', SetAnnouncementHandler),
     ('/tasks/send_confirmation_email', SendConfirmationEmailHandler),
+    ('/tasks/send_featuredSpeaker_email', SendFeaturedSpeakerEmailHandler),
 ], debug=True)

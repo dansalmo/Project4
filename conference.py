@@ -681,12 +681,21 @@ class ConferenceApi(remote.Service):
         if data['speakerKey']:
             speaker = self._ndbKey(urlsafe=request.speakerKey).get()
             data['speakerDisplayName'] = speaker.displayName
+
 # - - - Task 4: Add a Task - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
             #Check the speaker. If there is more than one session by this speaker at this conference, also add a new Memcache entry that features the speaker and session names. You can choose the Memcache key.
             sessions = Session.query().filter(Session.speakerKey==data['speakerKey'])
             if sessions.count() >= 2:
                 memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, '%s is our latest Featured Speaker' % data['speakerDisplayName'])
-
+                sessionNames = '\n'.join(s.name for s in sessions)
+                taskqueue.add(
+                    params={
+                        'email': user.email(),
+                        'sessionNames': sessionNames,
+                        'featuredSpeaker': data['speakerDisplayName']
+                        },
+                    url='/tasks/send_featuredSpeaker_email'
+                    )
 # - - - End Task 4 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
         # create Session

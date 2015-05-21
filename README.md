@@ -1,19 +1,10 @@
 App Engine application for the Udacity training course.
 
-##Improvements since previous submission:
+###Improvements since previous submission:
 
-1. Completed all tasks for project
-1. Removed debug print statements
-1. Fixed some typos
-1. Added code to also return the session key in SessionForm
-1. Removed sessionKeysSpeakingAt property from Speaker
-1. Improved REST path naming according to [REST API TUTORIAL][8]
-1. Added checks for existence of key kinds used
-1. Fixed gross inefficiency in getSessionsBySpeaker
-1. Added speakersKey to SpeakerForm
-1. Added method for getting all Speakers
+1. Added task for Task4 to email featured speaker announcement
 
-## Task 1 - Description of Sessions and Speakers implementation
+### Task 1 - Description of Sessions and Speakers implementation
 
 Sessions are implemented as child entity of Conference since they are always
 part of a specific conference.  The session model uses one combined DateTime
@@ -33,14 +24,14 @@ I also had to implement a means of creating  and getting Speaker entities since
 they were needed for testing and App engine does not allow entity creation at the
 console.
 
-## Task 3 - Description of additional queries
+### Task 3 - Description of additional queries
 
 Purpose of 2 new queries:  Since my code allows for incomplete information in the
 creation of a conferenece or session, I added queries to find all incomplete conferences
 or sessions of a conference so that the queries could be used to easily find items that
 need to be completed.  I also added a 3rd query that gets all speakers. 
 
-## Task 3 - Description of problem and solution proposal for provided query
+### Task 3 - Description of problem and solution proposal for provided query
 The problem for implementing the query for those that don't like workshops and don't like
 sessions after 7 pm was the need for more than one inequality.  The error was:
 
@@ -49,7 +40,11 @@ sessions after 7 pm was the need for more than one inequality.  The error was:
 I worked around this by doing the query without the time constraint, then iterating
 over the query results to remove times > 7pm.
 
+### Task 4 - Featured Speaker email task
 
+Added a task and SendFeaturedSpeakerEmailHandler() to send a Featured Speaker email 
+when a speaker has more than two sessions.  The email names the speaker in the subject
+line and lists all of the session names for the speaker.
 
 ## Products
 - [App Engine][1]
