@@ -2,9 +2,12 @@ App Engine application for the Udacity training course.
 
 ###Improvements since previous submission:
 
-1. Now using taskqueue to check for Featured Speaker
-1. Added @ndb.transactional(xg=True) decorator to _sessionAddIt to avaoid possible race condition
-1. Fixed 'confrence' typo 
+1. Added back MEMCACHE_FEATURED_SPEAKER_KEY to conference.py and imported it in main.py
+1. Renamed DEFAULTS into CONFERENCE_DEFAULTS
+1. Added _checkKey for conference key in all places conference key is used
+1. Changed naming from conf to c_key for keys
+1. I did not combine _ndbKey and _checkKey since _ndbKey is a workaround that can be
+removed if the NDB issue 143 is fixed, but _checkKey will always be needed.
 
 ### Task 1 - Description of Sessions and Speakers implementation
 
@@ -14,13 +17,15 @@ field but the SessionForm allows for input and display of data and time separate
 I chose to use an Enum type for the type of session, similar to T-Shirt size, since
 the types should be limited to a set of pre-defined choices, TBA being the default.
 A Session can be created with only a ConferenceKey and a name, other fields will be 
-defaulted to "To be announced" or another apporiate default.
+defaulted to "To be announced" or another appropriate default.
 
 I ran into and had to work around this [NDB issue][7]
 
 I chose to create a separate Speaker entity that is not tied to Profile
 because speakers might not be users or attendees nor should they have to be.
 A speaker may be an attendee, in which case the ProfileKey can be added.
+Since the speaker name is important to see from a session, I have added the
+speaker name to the session.
 
 I also had to implement a means of creating  and getting Speaker entities since
 they were needed for testing and App engine does not allow entity creation at the
@@ -35,7 +40,8 @@ need to be completed.  I also added a 3rd query that gets all speakers.
 
 ### Task 3 - Description of problem and solution proposal for provided query
 The problem for implementing the query for those that don't like workshops and don't like
-sessions after 7 pm was the need for more than one inequality.  The error was:
+sessions after 7 pm was the need for more than one inequality on different fields.
+The error was:
 
 `BadRequestError: Only one inequality filter per query is supported. Encountered both typeOfSession and startDateTime`
 

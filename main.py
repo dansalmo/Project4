@@ -18,9 +18,10 @@ from google.appengine.api import mail
 from conference import ConferenceApi
 
 from google.appengine.api import memcache
+from google.appengine.ext import ndb
 from models import Session
 
-MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKER"
+from conference import MEMCACHE_FEATURED_SPEAKER_KEY
 
 class SetAnnouncementHandler(webapp2.RequestHandler):
     def get(self):
@@ -41,11 +42,16 @@ class SendConfirmationEmailHandler(webapp2.RequestHandler):
                 'conferenceInfo')
         )
 
+# - - - Task 4: Add a Task - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# The task will check if there is more than one session by this speaker at this conference,
+# also add a new Memcache entry that features the speaker and session names.
 class CheckFeaturedSpeakerHandler(webapp2.RequestHandler):
     def post(self):
         """set memcache entry if speaker has more than one session"""
         sessions = Session.query().filter(Session.speakerKey==self.request.get('speakerKey'))
-        if sessions.count() >= 2:
+        # Add one if the session key just added can not be found in the queried sessions
+        not_found = not any(s.key.urlsafe() == self.request.get('sessionKey') for s in sessions)
+        if sessions.count() + not_found > 1:
             memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, 
                 '%s is our latest Featured Speaker' % self.request.get(
                 'speakerDisplayName'))

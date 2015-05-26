@@ -48,12 +48,13 @@ from utils import getUserId
 
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
 API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
+MEMCACHE_FEATURED_SPEAKER_KEY = "FEATURED_SPEAKER"
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
 ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-DEFAULTS = {
+CONFERENCE_DEFAULTS = {
     "city": "Default City",
     "maxAttendees": 0,
     "seatsAvailable": 0,
@@ -157,10 +158,10 @@ class ConferenceApi(remote.Service):
         del data['organizerDisplayName']
 
         # add default values for those missing (both data model & outbound Message)
-        for df in DEFAULTS:
+        for df in CONFERENCE_DEFAULTS:
             if data[df] in (None, []):
-                data[df] = DEFAULTS[df]
-                setattr(request, df, DEFAULTS[df])
+                data[df] = CONFERENCE_DEFAULTS[df]
+                setattr(request, df, CONFERENCE_DEFAULTS[df])
 
         # convert dates from strings to Date objects; set month based on start_date
         if data['startDate']:
@@ -204,10 +205,9 @@ class ConferenceApi(remote.Service):
 
         # update existing conference
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
-        # check that conference exists
-        if not conf:
-            raise endpoints.NotFoundException(
-                'No conference found with key: %s' % request.websafeConferenceKey)
+
+        # check that conf.key is a Conference key and it exists
+        self._checkKey(conf.key, request.websafeConferenceKey, 'Conference')
 
         # check that user is owner
         if user_id != conf.organizerUserId:
@@ -254,9 +254,10 @@ class ConferenceApi(remote.Service):
         """Return requested conference (by websafeConferenceKey)."""
         # get Conference object from request; bail if not found
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
-        if not conf:
-            raise endpoints.NotFoundException(
-                'No conference found with key: %s' % request.websafeConferenceKey)
+
+        # check that conf.key is a Conference key and it exists
+        self._checkKey(conf.key, request.websafeConferenceKey, 'Conference')
+
         prof = conf.key.parent().get()
         # return ConferenceForm
         return self._copyConferenceToForm(conf, getattr(prof, 'displayName'))
@@ -479,9 +480,9 @@ class ConferenceApi(remote.Service):
         # get conference; check that it exists
         wsck = request.websafeConferenceKey
         conf = ndb.Key(urlsafe=wsck).get()
-        if not conf:
-            raise endpoints.NotFoundException(
-                'No conference found with key: %s' % wsck)
+
+        # check that conf.key is a Conference key and it exists
+        self._checkKey(conf.key, request.websafeConferenceKey, 'Conference')
 
         # register
         if reg:
@@ -589,7 +590,7 @@ class ConferenceApi(remote.Service):
         return key
 
     def _checkKey(self, key, websafeKey, kind):
-        '''Check that conference exists and is the right Kind'''
+        '''Check that key exists and is the right Kind'''
         if key == 'Invalid Key':
             raise endpoints.NotFoundException(
                 'Invalid key: %s' % websafeKey)
@@ -659,12 +660,12 @@ class ConferenceApi(remote.Service):
         del data['startTime']
         del data['date']
 
-        # get the conference key for where the session will be added
+        # get the conference for where the session will be added
         conf = self._ndbKey(urlsafe=request.websafeConferenceKey).get()
-        # check that conference exists
-        if not conf:
-            raise endpoints.NotFoundException(
-                'No conference found with key: %s' % request.websafeConferenceKey)
+
+        # check that conf.key is a Conference key and it exists
+        self._checkKey(conf.key, request.websafeConferenceKey, 'Conference')
+
         # check that user is owner
         if user_id != conf.organizerUserId:
             raise endpoints.ForbiddenException(
@@ -678,13 +679,18 @@ class ConferenceApi(remote.Service):
         # get the speakerDisplayName from Speaker entity if a speakerKey was provided
         if data['speakerKey']:
             speaker = self._ndbKey(urlsafe=request.speakerKey).get()
+
+            # check that speaker.key is a speaker key and it exists
+            self._checkKey(speaker.key, request.speakerKey, 'Speaker')
+
             data['speakerDisplayName'] = speaker.displayName
 
 # - - - Task 4: Add a Task - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # Check the speaker. If there is more than one session by this speaker at this conference,
+        # The task will check if there is more than one session by this speaker at this conference,
         # also add a new Memcache entry that features the speaker and session names.
             taskqueue.add(
                 params={
+                    'sessionKey': s_key.urlsafe(),
                     'speakerKey': data['speakerKey'],
                     'speakerDisplayName': data['speakerDisplayName']
                     },
@@ -700,7 +706,7 @@ class ConferenceApi(remote.Service):
 
     #createSession(SessionForm, websafeConferenceKey) -- open only to the organizer of the conference
     @endpoints.method(SESSION_POST_REQUEST, SessionForm,
-            path='conference/{websafeConferenceKey}/session',
+            path='conference/{websafeConferenceKey}/sessions',
             http_method='POST', name='createSession')
     def createSession(self, request):
         """Create a new session for a conference. Open only to the organizer of the conference"""
@@ -713,12 +719,12 @@ class ConferenceApi(remote.Service):
     def getConferenceSessions(self, request):
         """Get list of all sessions for a conference."""
 
-        conf = self._ndbKey(urlsafe=request.websafeConferenceKey)
+        c_key = self._ndbKey(urlsafe=request.websafeConferenceKey)
 
-        # check that conf is a conference key and it exists
-        self._checkKey(conf, request.websafeConferenceKey, 'Conference')
+        # check that c_key is a Conference key and it exists
+        self._checkKey(c_key, request.websafeConferenceKey, 'Conference')
 
-        sessions = Session.query(ancestor=conf)
+        sessions = Session.query(ancestor=c_key)
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     #getConferenceSessionsByType(websafeConferenceKey, typeOfSession) Given a conference, return all sessions of a specified type (eg lecture, keynote, workshop)
@@ -728,12 +734,12 @@ class ConferenceApi(remote.Service):
     def getConferenceSessionsByType(self, request):
         """Get list of all sessions for a conference by type."""
 
-        conf = self._ndbKey(urlsafe=request.websafeConferenceKey)
+        c_key = self._ndbKey(urlsafe=request.websafeConferenceKey)
 
-        # check that conf is a conference key and it exists
-        self._checkKey(conf, request.websafeConferenceKey, 'Conference')
+        # check that c_key is a Conference key and it exists
+        self._checkKey(c_key, request.websafeConferenceKey, 'Conference')
         
-        sessions = Session.query(ancestor=conf).filter(Session.typeOfSession==str(getattr(SessionTypes, request.type)))
+        sessions = Session.query(ancestor=c_key).filter(Session.typeOfSession==str(getattr(SessionTypes, request.type)))
 
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
@@ -806,7 +812,6 @@ class ConferenceApi(remote.Service):
         # get session;
         wssk = request.websafeSessionKey
         s_key = ndb.Key(urlsafe=wssk)
-        session = s_key.get()
 
         # check that session is a Session key and it exists
         self._checkKey(s_key, wssk, 'Session')
@@ -874,15 +879,15 @@ class ConferenceApi(remote.Service):
     def getIncompleteConferenceSessions(self, request):
         """Get list of all sessions for a conference that have incomplete information."""
 
-        conf = self._ndbKey(urlsafe=request.websafeConferenceKey)
+        c_key = self._ndbKey(urlsafe=request.websafeConferenceKey)
 
-        # check that conf is a conference key and it exists
-        self._checkKey(conf, request.websafeConferenceKey, 'Conference')
+        # check that c_key is a Conference key and it exists
+        self._checkKey(c_key, request.websafeConferenceKey, 'Conference')
 
         sessions = Session.query(ndb.OR(
                 Session.highlights=='To be announced',
                 Session.speakerKey==None,
-                Session.typeOfSession=='TBA'), ancestor=conf)
+                Session.typeOfSession=='TBA'), ancestor=c_key)
         return SessionForms(items=[self._copySessionToForm(session) for session in sessions])
 
     @endpoints.method(message_types.VoidMessage, SpeakerForms,
@@ -901,14 +906,14 @@ class ConferenceApi(remote.Service):
     def getNotWorkshopSessionsBefore7pm(self, request):
         """Returns all conference non-workshop sessions before 7pm."""
 
-        conf = self._ndbKey(urlsafe=request.websafeConferenceKey)
+        c_key = self._ndbKey(urlsafe=request.websafeConferenceKey)
 
-        # check that conf is a conference key and it exists
-        self._checkKey(conf, request.websafeConferenceKey, 'Conference')
+        # check that c_key is a Conference key and it exists
+        self._checkKey(c_key, request.websafeConferenceKey, 'Conference')
 
         sessions = Session.query(ndb.AND(
                 Session.typeOfSession!='WORKSHOP',
-                Session.typeOfSession!='TBA'), ancestor=conf)
+                Session.typeOfSession!='TBA'), ancestor=c_key)
 
         #Fix for BadRequestError: Only one inequality filter per query is supported. Encountered both typeOfSession and startDateTime
         items = []
