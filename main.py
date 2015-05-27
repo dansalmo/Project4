@@ -49,7 +49,7 @@ class CheckFeaturedSpeakerHandler(webapp2.RequestHandler):
     def post(self):
         """set memcache entry if speaker has more than one session"""
         sessions = Session.query().filter(Session.speakerKey==self.request.get('speakerKey'))
-        # Add one if the session key just added can not be found in the queried sessions
+        # Add one if the session key just added can not yet be found in the queried sessions
         not_found = not any(s.key.urlsafe() == self.request.get('sessionKey') for s in sessions)
         if sessions.count() + not_found > 1:
             memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, 
